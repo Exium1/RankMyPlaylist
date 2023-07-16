@@ -1,0 +1,33 @@
+GET http://localhost:4900/api/playlist/import/4bDwuLMPHoag0BFfBBAxdL
+content-type: application/json
+Authorization: Bearer 123
+
+#####
+
+GET http://localhost:4900/api/playlist/rank
+content-type: application/json
+Authorization: Bearer 111
+
+#####
+
+GET http://localhost:4900/api/compare
+content-type: application/json
+Authorization: Bearer 111
+
+#####
+
+POST  http://localhost:4900/api/compare
+Authorization: Bearer 111
+content-type: application/json
+
+{
+    "greaterIndex": "0"
+}
+###
+POST  http://localhost:4900/api/compare
+Authorization: Bearer 111
+content-type: application/json
+
+{
+    "greaterIndex": "1"
+}
