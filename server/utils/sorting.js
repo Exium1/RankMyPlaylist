@@ -234,8 +234,23 @@ const mergePairs = (sessionID) => {
 	console.log(mergeSort.temp);
 };
 
+const isInitialized = (sessionId) => {
+	return sortingData[sessionId] ? true : false;
+};
+
+const getSortedTracks = (sessionID) => {
+	if (sortingData[sessionID] == null) return null;
+
+	const mergeSort = sortingData[sessionID].mergeSort;
+
+	if (!mergeSort || !mergeSort.sorted) return null;
+	return mergeSort.sorted;
+};
+
 module.exports = {
 	initSorting,
 	getNextComparison,
-	submitComparison
+	submitComparison,
+	isInitialized,
+	getSortedTracks
 };

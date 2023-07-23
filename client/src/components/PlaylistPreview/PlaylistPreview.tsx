@@ -1,70 +1,76 @@
 import axios from "axios";
-const { useState, useEffect } = require("react");
-const { database } = require("../../utils/database");
-var cookie = require("@boiseitguru/cookie-cutter");
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { getPlaylistPreview, getPlaylistRanked } from "../../services/playlist";
+import { getNextComparison } from "../../services/compare";
 
-export default function PlaylistPreview(props: any) {
-	const setPlaylistReceived = props.setPlaylistReceived;
-	const setRankingMode = props.setRankingMode;
-	const sessionID = cookie.get("sessionID");
-	const playlist = database[sessionID];
+export default function PlaylistPreview({
+	playlistId,
+	ranked
+}: {
+	playlistId: string;
+	ranked: boolean;
+}) {
+	const router = useRouter();
+	const [tracks, setTracks] = useState([]);
+	const [playlistInfo, setPlaylistInfo] = useState({
+		name: "",
+		description: "",
+		imageURL: ""
+	});
 
-	const sortedTracks = props.sortedTracks; // array of track id's
-	const [visibleTracks, setVisibleTracks] = useState([]);
-
-	console.log("loop");
+	useEffect(() => {
+		if (ranked) {
+			getPlaylistRanked(playlistId).then((res) => {
+				setTracks(res.tracks);
+				setPlaylistInfo({
+					name: res.name,
+					description: res.description,
+					imageURL: res.imageURL
+				});
+			});
+		} else {
+			getPlaylistPreview(playlistId).then((res) => {
+				setTracks(res.tracks);
+				setPlaylistInfo({
+					name: res.name,
+					description: res.description,
+					imageURL: res.imageURL
+				});
+			});
+		}
+	}, []);
 
 	const handleBack = () => {
-		setPlaylistReceived(false);
+		router.push("/");
 	};
 
 	const handleConfirm = () => {
-		const config = {
-			headers: { Authorization: `Bearer ${sessionID}` }
-		};
-
-		axios
-			.get("/playlist/rank", config)
-			.then(() => setRankingMode(true))
-			.catch((err) => console.log(err));
+		getNextComparison(playlistId).then((options) => {
+			router.push(
+				`/playlist/${playlistId}/compare?trackA=${options[0]}&trackB=${options[1]}`
+			);
+		});
 	};
-
-	useEffect(() => {
-		let tracks: any = [];
-
-		if (sortedTracks.length == 0) {
-			tracks = playlist.tracks.items;
-		} else {
-			sortedTracks.forEach((id: string) => {
-				let track = playlist.tracks.items.find(
-					(item: any) => item.track.id == id
-				);
-
-				if (track) tracks.push(track);
-			});
-		}
-
-		setVisibleTracks(tracks);
-	}, []);
 
 	return (
 		<div className="flex flex-col justify-center bg-slate-600 p-14 items-center gap-3">
 			<div className="flex items-center gap-3">
 				<img
-					src={playlist.images[0].url}
+					src={playlistInfo.imageURL}
 					height="100px"
 					width="100px"
 					alt=""
 					className="rounded"
 				></img>
 				<div className="flex flex-col">
-					<h2 className="text-4xl">{playlist.name}</h2>
+					<h2 className="text-4xl">{playlistInfo.name}</h2>
 					<p className="text-lg text-slate-300 max-w-xs">
-						{playlist.description}
+						{playlistInfo.description}
 					</p>
 				</div>
 			</div>
-			{sortedTracks.length == 0 ? (
+			{!ranked ? (
 				<div className="flex m-8 gap-5 ">
 					<button
 						onClick={handleBack}
@@ -76,7 +82,9 @@ export default function PlaylistPreview(props: any) {
 						onClick={handleConfirm}
 						className="rounded-full bg-green-600 hover:bg-green-800 py-3 px-7 transition-colors"
 					>
-						Rank {playlist.tracks.items.length} Songs
+						Rank {tracks.length} Songs (~
+						{Math.round(tracks.length * Math.log2(tracks.length))}{" "}
+						Comparisons)
 					</button>
 				</div>
 			) : (
@@ -85,15 +93,15 @@ export default function PlaylistPreview(props: any) {
 				</div>
 			)}
 			<div className="flex flex-col gap-2 divide-y divide-slate-400">
-				{visibleTracks.map((item: any, index: number) => (
+				{tracks.map((track: any, index: number) => (
 					<div
-						key={`${item.track.name}`}
+						key={`${track.name}`}
 						className="flex gap-3 pt-2 items-center"
 					>
-						{sortedTracks.length > 0 && (
+						{ranked && (
 							<p
 								className={
-									sortedTracks.length > 0
+									ranked
 										? index == 0
 											? "text-2xl"
 											: index == 1
@@ -108,9 +116,9 @@ export default function PlaylistPreview(props: any) {
 							</p>
 						)}
 						<img
-							src={item.track.album.images?.[0].url}
+							src={track.imageURL}
 							height={
-								sortedTracks.length > 0
+								ranked
 									? index == 0
 										? "55px"
 										: index == 1
@@ -121,7 +129,7 @@ export default function PlaylistPreview(props: any) {
 									: "30px"
 							}
 							width={
-								sortedTracks.length > 0
+								ranked
 									? index == 0
 										? "55px"
 										: index == 1
@@ -136,7 +144,7 @@ export default function PlaylistPreview(props: any) {
 						<h3
 							className={
 								"inline " +
-								(sortedTracks.length > 0
+								(ranked
 									? index == 0
 										? "text-3xl"
 										: index == 1
@@ -147,7 +155,7 @@ export default function PlaylistPreview(props: any) {
 									: "text-lg")
 							}
 						>
-							{item.track.name}
+							{track.name}
 						</h3>
 					</div>
 				))}

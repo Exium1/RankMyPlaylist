@@ -1,6 +1,12 @@
+"use client";
+
+import { initSession, updateSession } from "@/services/api";
 import "./globals.css";
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { useEffect } from "react";
+import Cookies from "js-cookie";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,6 +20,17 @@ export default function RootLayout({
 }: {
 	children: React.ReactNode;
 }) {
+	useEffect(() => {
+		let sessionID = Cookies.get("sessionID");
+
+		if (sessionID == null) {
+			sessionID = initSession();
+			Cookies.set("sessionID", sessionID, { path: "/" });
+		}
+
+		updateSession(sessionID);
+	}, []);
+
 	return (
 		<html lang="en">
 			<body className={inter.className}>{children}</body>

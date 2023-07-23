@@ -1,39 +1,22 @@
-import axios from "axios";
-import crypto from "crypto";
+"use client";
+
 import { useState } from "react";
-const cookie = require("@boiseitguru/cookie-cutter");
-const { database } = require("../../utils/database");
+import { useRouter } from "next/navigation";
 
 export default function ImportPlaylist(props: any) {
-	const setPlaylistReceived = props.setPlaylistReceived;
 	const [message, setMessage] = useState("");
-	const playlistID = message.match(/playlist\/([\w\d]+)/)?.[1];
+	const router = useRouter();
 
 	const handleChange = (event: any) => {
 		setMessage(event.target.value);
 	};
 
 	const handleImport = async () => {
+		const playlistID = message.match(/playlist\/([\w\d]+)/)?.[1];
+
 		if (playlistID == null) return;
 
-		cookie.set("sessionID", crypto.randomBytes(8).toString("hex"));
-
-		const sessionID = cookie.get("sessionID") || 123;
-
-		const config = {
-			headers: { Authorization: `Bearer ${sessionID}` }
-		};
-
-		const response = await axios
-			.get("/playlist/import/" + playlistID, config)
-			.catch((err) => console.log(err));
-
-		if (response) {
-			database[sessionID] = response?.data;
-			setPlaylistReceived(true);
-		} else {
-			console.log("no response");
-		}
+		router.push(`/playlist/${playlistID}`);
 	};
 
 	return (

@@ -30,7 +30,9 @@ export const PreviewButton = (props: any) => {
 	return (
 		<Image
 			src={
-				playing ? "./assets/icons/pause.svg" : "./assets/icons/play.svg"
+				playing
+					? "../../assets/icons/pause.svg"
+					: "../../assets/icons/play.svg"
 			}
 			height={35}
 			width={35}

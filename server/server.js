@@ -6,6 +6,7 @@ const { authentication } = require("./middleware/authentication");
 const app = express();
 const endpoint = "/api";
 const port = 4900;
+require("dotenv").config();
 
 app.use(cors());
 app.use(bodyParser.json());
