@@ -1,4 +1,5 @@
 require("dotenv").config();
+const axios = require("axios");
 const SpotifyWebApi = require("spotify-web-api-node");
 
 var spotifyApi = new SpotifyWebApi({
@@ -7,9 +8,42 @@ var spotifyApi = new SpotifyWebApi({
 	redirectUri: "http://localhost:3000"
 });
 
-const getPlaylistByID = async (playlistID) => {
+var accessToken = "";
+
+async function getAccessToken() {
 	return new Promise((resolve, reject) => {
-		spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
+		if (accessToken != "") return accessToken;
+
+		const headers = {
+			Authorization:
+				"Basic " +
+				new Buffer.from(
+					process.env.SPOTIFY_CLIENT_ID +
+						":" +
+						process.env.SPOTIFY_CLIENT_SECRET
+				).toString("base64")
+		};
+
+		axios
+			.post(
+				"https://accounts.spotify.com/api/token",
+				`grant_type=client_credentials&client_id=${process.env.SPOTIFY_CLIENT_ID}&client_secret=${process.env.SPOTIFY_CLIENT_SECRET}`,
+				headers
+			)
+			.then((res) => {
+				accessToken = res.data.access_token;
+				setTimeout(() => (accessToken = ""), res.data.expires_in);
+				resolve(accessToken);
+			})
+			.catch((err) => console.log(err));
+	});
+}
+
+const getPlaylistByID = async (playlistID) => {
+	return new Promise(async (resolve, reject) => {
+		var retrievedToken = await getAccessToken();
+
+		spotifyApi.setAccessToken(retrievedToken);
 		spotifyApi
 			.getPlaylist(playlistID, {
 				fields: "external_urls,name,description,owner(display_name),images,href,tracks.items(track(name,id,href,preview_url,album(images,artists(name,href))))"
@@ -24,6 +58,7 @@ const getPlaylistByID = async (playlistID) => {
 			);
 	});
 };
+
 module.exports = {
 	getPlaylistByID
 };
