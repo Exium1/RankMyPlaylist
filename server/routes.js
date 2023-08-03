@@ -78,12 +78,6 @@ router.get("/playlist/:playlistID", async (req, res) => {
 	}
 });
 
-router.get("/playlist/rank", (req, res) => {
-	const status = sorting.initSorting(req.sessionID);
-
-	res.sendStatus(status);
-});
-
 router.get("/compare", (req, res) => {
 	const sessionID = req.sessionID;
 
