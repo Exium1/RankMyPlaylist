@@ -19,7 +19,7 @@ export const updateSession = (sessionID: string) => {
 
 export const api = () =>
 	axios.create({
-		baseURL: "http://localhost:4900/api/",
+		baseURL: "https://joaquinescobar.me/api/",
 		headers: {
 			Authorization: `Bearer ${savedSessionID}`
 		}
