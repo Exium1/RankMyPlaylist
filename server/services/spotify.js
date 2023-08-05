@@ -41,6 +41,7 @@ async function getAccessToken() {
 
 const getPlaylistByID = async (playlistID) => {
 	return new Promise(async (resolve, reject) => {
+		console.log(`Fetching playlist ${playlistID} from Spotify...`)
 		var retrievedToken = await getAccessToken();
 
 		spotifyApi.setAccessToken(retrievedToken);
@@ -55,7 +56,10 @@ const getPlaylistByID = async (playlistID) => {
 				function (err) {
 					throw err;
 				}
-			);
+			).catch((err) => {
+				console.log(err);
+				reject(null);
+			})
 	});
 };
 

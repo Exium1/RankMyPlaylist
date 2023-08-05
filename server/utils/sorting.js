@@ -34,12 +34,11 @@ function shuffle(array) {
 	return array;
 }
 
-const initSorting = (sessionID) => {
-	const playlistData = database.getCurrentPlaylist(sessionID);
+const initSorting = async (sessionID, playlistID) => {
 
-	if (playlistData == null) return 401;
-	if (sortingData[sessionID] != null) return 401;
+	database.sessions[sessionID] = playlistID;
 
+	const playlistData = await database.getPlaylist(playlistID);
 	const tracks = playlistData.tracks.items.map((item) => item.track.id);
 
 	shuffle(tracks);
@@ -47,7 +46,8 @@ const initSorting = (sessionID) => {
 	sortingData[sessionID] = {
 		mergeSort: {
 			temp: [],
-			currentRow: 0
+			currentRow: 0,
+			sorted: []
 		}
 	};
 
@@ -76,14 +76,11 @@ const getNextComparison = (sessionID) => {
 	let second;
 
 	while (!needsComparison(sessionID, currentRow)) {
-		console.log(`index ${currentRow} needs no comp`);
 
 		currentRow++;
 
 		if (currentRow >= mergeSort.temp.length) {
 			if (readyToMerge(sessionID)) {
-				console.log("\nno comps found in this format");
-				console.log(mergeSort.temp);
 				return "no comps found in this format";
 			}
 
@@ -104,10 +101,7 @@ const getNextComparison = (sessionID) => {
 const submitComparison = (sessionID, index) => {
 	if (index != "0" && index != "1") return null;
 
-	if (isSorted(sessionID)) {
-		console.log("ALREADY SORTED");
-		return;
-	}
+	if (isSorted(sessionID)) return;
 
 	const mergeSort = sortingData[sessionID].mergeSort;
 	let currentRow = mergeSort.currentRow;
@@ -126,10 +120,6 @@ const submitComparison = (sessionID, index) => {
 		mergeSort.currentRow = currentRow;
 	}
 
-	console.log("\n");
-	console.log(mergeSort.temp);
-	console.log(mergeSort.currentRow);
-
 	if (readyToMerge(sessionID)) {
 		mergePairs(sessionID);
 		mergeSort.currentRow = 0;
@@ -147,10 +137,6 @@ const submitComparison = (sessionID, index) => {
 
 const needsComparison = (sessionID, index) => {
 	let mergeSort = sortingData[sessionID].mergeSort;
-
-	// console.log("needsComparison");
-	// console.log(mergeSort.temp);
-	// console.log(mergeSort.currentRow);
 
 	if (mergeSort.temp[index].length >= 2) {
 		if (Array.isArray(mergeSort.temp[index][0])) {
@@ -199,6 +185,8 @@ const readyToMerge = (sessionID) => {
 const isSorted = (sessionID) => {
 	const mergeSort = sortingData[sessionID].mergeSort;
 
+	if (mergeSort.sorted.length > 0) return true;
+
 	if (mergeSort.temp.length == 1) {
 		return !Array.isArray(mergeSort.temp[0][0]);
 	}
@@ -207,8 +195,6 @@ const isSorted = (sessionID) => {
 };
 
 const mergePairs = (sessionID) => {
-	console.log("\nmergePairs");
-
 	let mergeSort = sortingData[sessionID].mergeSort;
 	mergeSort.currentRow = 0;
 
@@ -218,8 +204,6 @@ const mergePairs = (sessionID) => {
 		mergeSort.temp[i] = [clone, mergeSort.temp[i + 1]];
 		mergeSort.temp.splice(i + 1, 1);
 	}
-
-	console.log(mergeSort.temp);
 };
 
 const isInitialized = (sessionId) => {

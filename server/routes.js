@@ -1,26 +1,28 @@
 const express = require("express");
 const router = express.Router();
-const spotify = require("./services/spotify");
 const sorting = require("./utils/sorting");
 const database = require("./services/database");
 
+// Get playlist info for displaying and used for comparisons in the future...
 router.get("/playlist/:playlistID", async (req, res) => {
-	const sessionID = req.sessionID;
 	const playlistID = req.params.playlistID;
-	let playlistData = database.getPlaylist(playlistID);
+	const sessionID = req.sessionID;
 
-	database.setPlaylist(sessionID, playlistID);
+	let playlistData = await database.getPlaylist(playlistID);
+
+	if (!playlistData) {
+		res.sendStatus(400);
+		return;
+	}
 
 	if (req.query.ranked) {
 		const rankedTracks = sorting.getSortedTracks(sessionID);
 
 		if (rankedTracks == null) {
+
 			res.status(400).send(`You haven't ranked playlist ${playlistID}`);
 		} else {
-			if (!playlistID) {
-				playlistData = await spotify.getPlaylistByID(playlistID);
-			}
-
+			
 			const rankedTracksInfo = [];
 
 			for (var i = 0; i < rankedTracks.length; i++) {
@@ -34,30 +36,7 @@ router.get("/playlist/:playlistID", async (req, res) => {
 				imageURL: playlistData.images[0].url
 			});
 		}
-
-		return;
-	}
-
-	if (playlistData) {
-		const parsedPlaylistData = {
-			tracks: [],
-			name: playlistData.name,
-			description: playlistData.description,
-			imageURL: playlistData.images[0].url
-		};
-
-		playlistData.tracks.items.forEach((item) => {
-			parsedPlaylistData.tracks.push({
-				name: item.track.name,
-				imageURL: item.track.album.images[0].url
-			});
-		});
-
-		res.status(200).send(parsedPlaylistData);
 	} else {
-		console.log("Fetching playlist " + playlistID + " from Spotify...");
-
-		playlistData = await spotify.getPlaylistByID(playlistID);
 
 		const parsedPlaylistData = {
 			tracks: [],
@@ -65,38 +44,45 @@ router.get("/playlist/:playlistID", async (req, res) => {
 			description: playlistData.description,
 			imageURL: playlistData.images[0].url
 		};
-
+	
 		playlistData.tracks.items.forEach((item) => {
 			parsedPlaylistData.tracks.push({
 				name: item.track.name,
 				imageURL: item.track.album.images[0].url
 			});
 		});
-
-		database.newPlaylist(playlistID, playlistData);
+	
 		res.status(200).send(parsedPlaylistData);
 	}
-});
+})
 
-router.get("/compare", (req, res) => {
+// Get next comparison for a specific playlist through sessionID
+router.get("/playlist/:playlistID/compare", async (req, res) => {
+	const playlistID = req.params.playlistID;
 	const sessionID = req.sessionID;
 
-	if (!sorting.isInitialized(sessionID)) sorting.initSorting(sessionID);
+	if (database.getSessionPlaylistID(sessionID) != playlistID || !sorting.isInitialized(sessionID)) {
+		await sorting.initSorting(sessionID, playlistID);
+	}
 
 	const nextComparison = sorting.getNextComparison(sessionID);
 
 	res.status(200).send(nextComparison);
-});
+})
 
-router.post("/compare", (req, res) => {
+// Post a comparison for a specific playlist through sessionID
+router.post("/playlist/:playlistID/compare", async (req, res) => {
+	const playlistID = req.params.playlistID;
 	const sessionID = req.sessionID;
 	const selectedIndex = req.body.selectedIndex;
+
+	if (database.getSessionPlaylistID(sessionID) != playlistID) return res.status(400).send("Import and confirm a playlist first.")
 
 	if (selectedIndex == null) return res.status(400).send("No selected index");
 
 	const isSorted = sorting.submitComparison(sessionID, selectedIndex);
 
-	if (isSorted != false) {
+	if (isSorted) {
 		res.status(200).send({
 			message: "This playlist is now sorted!",
 			array: isSorted
@@ -106,11 +92,12 @@ router.post("/compare", (req, res) => {
 
 		res.status(200).send(nextComparison);
 	}
-});
+})
 
-router.get("/track/:trackId", (req, res) => {
-	const trackId = req.params.trackId;
-	let trackData = database.getTrack(trackId);
+// Get track information
+router.get("/track/:trackID", (req, res) => {
+	const trackID = req.params.trackID;
+	let trackData = database.getTrack(trackID);
 
 	res.status(200).send(trackData);
 });

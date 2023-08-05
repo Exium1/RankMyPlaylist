@@ -1,33 +1,33 @@
+const spotify = require("./spotify");
 const sessions = {};
 const playlists = {};
 
-const getPlaylist = (playlistID) => {
-	if (!playlists[playlistID]) return null;
+const getPlaylist = async (playlistID) => {
+	if (!playlists[playlistID]) {
+		const spotifyData = await spotify.getPlaylistByID(playlistID);
+
+		if (!spotifyData) return null;
+		else playlists[playlistID] = spotifyData;
+	};
 
 	return playlists[playlistID];
 };
 
-const getCurrentPlaylist = (sessionID) => {
-	if (!sessions[sessionID]) return null;
-	return getPlaylist(sessions[sessionID].currentPlaylist);
+
+const getSessionPlaylistID = (sessionID) => {
+	return sessions[sessionID];
 };
 
-const newPlaylist = (playlistID, playlistData) => {
-	playlists[playlistID] = playlistData;
-};
+const setSessionPlaylistID = (sessionID, playlistID) => {
+	sessions[sessionID] = playlistID;
+}
 
-const setPlaylist = (sessionID, playlistID) => {
-	if (!sessions[sessionID]) sessions[sessionID] = {};
-
-	sessions[sessionID].currentPlaylist = playlistID;
-};
-
-const getTrack = (trackId) => {
+const getTrack = (trackID) => {
 	let match = null;
 
 	Object.keys(playlists).forEach((playlistId) => {
 		playlists[playlistId].tracks.items.forEach((item) => {
-			if (item.track.id == trackId) {
+			if (item.track.id == trackID) {
 				match = {
 					name: item.track.name,
 					imageURL: item.track.album.images[0].url,
@@ -60,8 +60,7 @@ module.exports = {
 	sessions,
 	playlists,
 	getPlaylist,
-	newPlaylist,
-	setPlaylist,
-	getCurrentPlaylist,
-	getTrack
+	getTrack,
+	getSessionPlaylistID,
+	setSessionPlaylistID
 };

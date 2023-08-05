@@ -12,8 +12,8 @@ export default function PlaylistPreview({
 	ranked: boolean;
 }) {
 	const router = useRouter();
-	const [tracks, setTracks] = useState([]);
-	const [playlistInfo, setPlaylistInfo] = useState({
+	const [ tracks, setTracks ] = useState([]);
+	const [ playlistInfo, setPlaylistInfo ] = useState({
 		name: "",
 		description: "",
 		imageURL: ""
@@ -88,7 +88,13 @@ export default function PlaylistPreview({
 					</button>
 				</div>
 			) : (
-				<div className="my-4">
+				<div className="flex flex-col my-4 gap-5">
+					<button
+						onClick={handleBack}
+						className="rounded-full bg-green-600 hover:bg-green-800 py-3 px-7 transition-colors"
+					>
+						Try another playlist
+					</button>
 					<h2 className="text-xl">Here is your ranking:</h2>
 				</div>
 			)}

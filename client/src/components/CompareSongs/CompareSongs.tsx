@@ -1,4 +1,3 @@
-import axios from "axios";
 import Image from "next/image";
 import { PreviewButton } from "../PreviewButton/PreviewButton";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -31,7 +30,7 @@ export default function CompareSongs({
 	}, [searchParams]);
 
 	const handleResponse = (options: any) => {
-		router.push(
+		router.replace(
 			`/playlist/${params.playlistId}/compare?trackA=${options[0]}&trackB=${options[1]}`
 		);
 	};
@@ -41,7 +40,7 @@ export default function CompareSongs({
 	};
 
 	const selectTrack = (index: number) => {
-		submitComparison(index).then((data) => {
+		submitComparison(index, params.playlistId as string).then((data) => {
 			if (data.options) handleResponse(data.options);
 			else handleComplete(data);
 		});
